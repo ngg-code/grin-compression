@@ -8,7 +8,8 @@ import java.io.*;
 public class BitInputStream {
     private FileInputStream input;
     private int digits;     // next set of digits (buffer)
-    private int cursor;     // how many digits from buffer have been used
+    private int cursor; 
+    public String in;    // how many digits from buffer have been used
 
     private static final int BYTE_SIZE = 8;  // digits per byte
 
@@ -19,10 +20,13 @@ public class BitInputStream {
     public BitInputStream(String file) throws IOException {
         input = new FileInputStream(file);
         nextByte();
+        this.in = file;
     }
 
     /** @return true iff the stream has bits left to produce */
     public boolean hasBits() { return digits != -1; }
+
+    public String getFile() { return in;}
 
     /**
      * Reads a bit from the stream in big-endian order (msb first)
