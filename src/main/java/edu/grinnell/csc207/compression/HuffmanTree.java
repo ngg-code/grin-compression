@@ -9,30 +9,84 @@ import java.util.PriorityQueue;
  * A HuffmanTree derives a space-efficient coding of a collection of byte
  * values.
  *
- * The huffman tree encodes values in the range 0--255 which would normally
+ * The huffman tree encodes values which would normally
  * take 8 bits. However, we also need to encode a special EOF character to
- * denote the end of a .grin file. Thus, we need 9 bits to store each
- * byte value. This is fine for file writing (modulo the need to write in
- * byte chunks to the file), but Java does not have a 9-bit data type.
- * Instead, we use the next larger primitive integral type, short, to store
+ * denote the end of a .grin file. We use the next larger primitive integral
+ * type, short, to store
  * our byte values.
  */
 public class HuffmanTree {
 
+    /**
+     * The EOF character is used to denote the end of a .grin file. It is
+     * represented by the value 255 (0xFF) in the file.
+     */
     public static final short EOF = 255;
+    /*
+     * The frequency map is a mapping from 9-bit values to their
+     * frequencies in the file. The key is a short (which can hold 9 bits)
+     * and the value is an integer (which can hold the frequency of that
+     * value in the file).
+     */
     public Map<Short, Integer> freqs;
+    /*
+     * The root of the Huffman tree. The tree is built from the frequency
+     * map using a priority queue. The tree is a binary tree.
+     */
     public Node root;
+    /*
+     * The frequency of the most common value in the file. This is used to
+     * determine the size of the Huffman tree.
+     */
     public int frequency;
+    /*
+     * The codes map is a mapping from 9-bit values to their Huffman codes.
+     * The key is a short (which can hold 9 bits) and the value is a string
+     * (which holds the Huffman code for that value). The codes map is used
+     * to encode and decode the file.
+     */
     public Map<Short, String> codes;
+    /*
+     * The input and output streams are used to read and write the file.
+     * The input stream is a BitInputStream which reads the file bit-by-bit
+     */
     public BitInputStream in;
+    /*
+     * The output stream is a BitOutputStream which writes the file
+     * bit-by-bit.
+     */
     public BitOutputStream out;
 
+    /*
+     * The Node class represents a node in the Huffman tree. Each node
+     * contains a value which is a short, a frequency which is an
+     * integer, and two child nodes which are also HuffmanNodes.
+     */
     public static class Node {
+        /*
+         * The short which can hold 9 bits.
+         */
         private Short value;
+        /*
+         * The frequency the integer which can hold the
+         * frequency of that value in the file.
+         */
         private int frequency;
+        /*
+         * The left child of the node.
+         */
         public Node left;
+        /*
+         * The right child of the node.
+         */
         public Node right;
 
+        /**
+         * Constructs a new Huffman Node with the given value and frequency.
+         * 
+         * @param value     the value of the node (a short)
+         * @param frequency the frequency of the node (an integer)
+         */
         public Node(Short value, int frequency) {
             this.value = value;
             this.frequency = frequency;
@@ -40,24 +94,55 @@ public class HuffmanTree {
             this.right = null;
         }
 
+        /**
+         * Constructs a new Huffman Node with the given left and right child
+         * nodes. The frequency of the node is the sum of the frequencies of
+         * the left and right child nodes.
+         * 
+         * @param left  the left child of the node
+         * @param right the right child of the node
+         */
         public Node(Node left, Node right) {
             this.left = left;
             this.right = right;
             this.frequency = left.frequency + right.frequency;
         }
 
+        /**
+         * Returns the value of the node.
+         * 
+         * @return the value of the node (a short)
+         */
         public Short getValue() {
             return value;
         }
 
+        /**
+         * Returns the frequency of the node.
+         * 
+         * @return the frequency of the node (an integer)
+         */
         public int getFrequency() {
             return frequency;
         }
 
+        /**
+         * Returns true if the node is a leaf node (i.e. it has no children).
+         * 
+         * @return true if the node is a leaf node, false otherwise
+         */
         public boolean isLeaf() {
             return left == null && right == null;
         }
 
+        /**
+         * Compares this node to another node based on their frequencies.
+         * 
+         * @param other the other node to compare to
+         * @return a negative integer, zero, or a positive integer as this
+         *         node is less than, equal to, or greater than the specified
+         *         node
+         */
         public int compareTo(Node other) {
             return this.frequency - other.frequency;
         }
@@ -85,6 +170,12 @@ public class HuffmanTree {
         buildCodesMap(root, "");
     }
 
+    /**
+     * Constructs a mapping from 9-bit values to their Huffman codes.
+     * 
+     * @param node the root of the Huffman tree
+     * @param code the current Huffman code
+     */
     private void buildCodesMap(Node node, String code) {
         if (node.isLeaf()) {
             codes.put(node.value, code);
@@ -98,7 +189,7 @@ public class HuffmanTree {
      * Constructs a new HuffmanTree from the given file.
      * 
      * @param in the input file (as a BitInputStream)
-     * @throws IOException 
+     * @throws IOException
      */
     public HuffmanTree(BitInputStream in) throws IOException {
         Map<Short, Integer> frequencies = new HashMap<>();
@@ -137,6 +228,12 @@ public class HuffmanTree {
         serializeNode(root, out);
     }
 
+    /**
+     * Serializes the given Huffman tree node to the given output stream.
+     * 
+     * @param node the node to serialize
+     * @param out  the output file as a BitOutputStream
+     */
     private void serializeNode(Node node, BitOutputStream out) {
         if (node.isLeaf()) {
             out.writeBits(1, 1);
@@ -147,7 +244,6 @@ public class HuffmanTree {
             serializeNode(node.right, out);
         }
     }
-
 
     /**
      * Encodes the file given as a stream of bits into a compressed format
@@ -174,8 +270,7 @@ public class HuffmanTree {
     /**
      * Decodes a stream of huffman codes from a file given as a stream of
      * bits into their uncompressed form, saving the results to the given
-     * output stream. Note that the EOF character is not written to out
-     * because it is not a valid 8-bit chunk (it is 9 bits).
+     * output stream.
      * 
      * @param in  the file to decompress.
      * @param out the file to write the decompressed output to.
