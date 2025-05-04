@@ -71,7 +71,7 @@ public class HuffmanTree {
          * The frequency the integer which can hold the
          * frequency of that value in the file.
          */
-        private Integer frequency;
+        private int frequency;
         /*
          * The left child of the node.
          */
@@ -87,7 +87,7 @@ public class HuffmanTree {
          * @param value     the value of the node (a short)
          * @param frequency the frequency of the node (an integer)
          */
-        public Node(Short value, Integer frequency) {
+        public Node(Short value, int frequency) {
             this.value = value;
             this.frequency = frequency;
             this.left = null;
@@ -122,7 +122,7 @@ public class HuffmanTree {
          * 
          * @return the frequency of the node (an integer)
          */
-        public Integer getFrequency() {
+        public int getFrequency() {
             return frequency;
         }
 
@@ -143,7 +143,7 @@ public class HuffmanTree {
          *         node is less than, equal to, or greater than the specified
          *         node
          */
-        public Integer compareTo(Node other) {
+        public int compareTo(Node other) {
             return this.frequency - other.frequency;
         }
     }
@@ -185,37 +185,10 @@ public class HuffmanTree {
         }
     }
 
-    /**
-     * Constructs a new HuffmanTree from the given file.
-     * 
-     * @param in the input file as a BitInputStream
-     * @throws IOException
-     */
-    public HuffmanTree(BitInputStream in) throws IOException {
-        Map<Short, Integer> frequencies = new HashMap<>();
-        while (in.hasBits()) {
-            int value = in.readBits(8);
-            if (value == -1) {
-                break;
-            }
-            frequencies.put((short) value, frequencies.getOrDefault((short) value, 0) + 1);
-        }
-        frequencies.put(EOF, 1);
-        PriorityQueue<Node> priorityQue = new PriorityQueue<>();
-        for (Map.Entry<Short, Integer> entry : frequencies.entrySet()) {
-            priorityQue.add(new Node(entry.getKey(), entry.getValue()));
-        }
-        while (priorityQue.size() > 1) {
-            Node left = priorityQue.poll();
-            Node right = priorityQue.poll();
-            priorityQue.add(new Node(left, right));
-        }
-        root = priorityQue.poll();
-        codes = new HashMap<>();
+    public HuffmanTree(Node rootNode) {
+        this.root = rootNode;
+        this.codes = new HashMap<>();
         buildCodesMap(root, "");
-        this.in = in;
-        this.out = new BitOutputStream(in.getFile(), false);
-
     }
 
     /**
@@ -241,10 +214,30 @@ public class HuffmanTree {
         } else {
             out.writeBits(0, 1);
             serializeNode(node.left, out);
-            out.writeBits(1, 1);
             serializeNode(node.right, out);
         }
     }
+
+    // Deserialize a tree from a BitInputStream
+public static HuffmanTree deserialize(BitInputStream in) throws IOException {
+    Node root = deserializeNode(in);
+    return new HuffmanTree(root);
+}
+
+// Helper method for deserialization
+private static Node deserializeNode(BitInputStream in) throws IOException {
+    int bit = in.readBit();
+    if (bit == 1) {
+        // Leaf node
+        int value = in.readBits(9);
+        return new Node((short)value, 0); // Frequency doesn't matter for decoding
+    } else {
+        // Internal node
+        Node left = deserializeNode(in);
+        Node right = deserializeNode(in);
+        return new Node(left, right);
+    }
+}
 
     /**
      * Encodes the file given as a stream of bits into a compressed format
