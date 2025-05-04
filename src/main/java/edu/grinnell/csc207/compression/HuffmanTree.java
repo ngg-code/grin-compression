@@ -71,7 +71,7 @@ public class HuffmanTree {
          * The frequency the integer which can hold the
          * frequency of that value in the file.
          */
-        private int frequency;
+        private Integer frequency;
         /*
          * The left child of the node.
          */
@@ -87,7 +87,7 @@ public class HuffmanTree {
          * @param value     the value of the node (a short)
          * @param frequency the frequency of the node (an integer)
          */
-        public Node(Short value, int frequency) {
+        public Node(Short value, Integer frequency) {
             this.value = value;
             this.frequency = frequency;
             this.left = null;
@@ -122,7 +122,7 @@ public class HuffmanTree {
          * 
          * @return the frequency of the node (an integer)
          */
-        public int getFrequency() {
+        public Integer getFrequency() {
             return frequency;
         }
 
@@ -143,7 +143,7 @@ public class HuffmanTree {
          *         node is less than, equal to, or greater than the specified
          *         node
          */
-        public int compareTo(Node other) {
+        public Integer compareTo(Node other) {
             return this.frequency - other.frequency;
         }
     }
@@ -154,10 +154,10 @@ public class HuffmanTree {
      * @param freqs a map from 9-bit values to frequencies.
      */
     public HuffmanTree(Map<Short, Integer> freqs) {
-        Map<Short, Integer> frequencies = new HashMap<>(freqs);
-        frequencies.put(EOF, 1);
+        this.freqs = freqs;
+        freqs.put(EOF, 1);
         PriorityQueue<Node> priorityQue = new PriorityQueue<>();
-        for (Map.Entry<Short, Integer> entry : frequencies.entrySet()) {
+        for (Map.Entry<Short, Integer> entry : freqs.entrySet()) {
             priorityQue.add(new Node(entry.getKey(), entry.getValue()));
         }
         while (priorityQue.size() > 1) {
@@ -188,7 +188,7 @@ public class HuffmanTree {
     /**
      * Constructs a new HuffmanTree from the given file.
      * 
-     * @param in the input file (as a BitInputStream)
+     * @param in the input file as a BitInputStream
      * @throws IOException
      */
     public HuffmanTree(BitInputStream in) throws IOException {
@@ -241,6 +241,7 @@ public class HuffmanTree {
         } else {
             out.writeBits(0, 1);
             serializeNode(node.left, out);
+            out.writeBits(1, 1);
             serializeNode(node.right, out);
         }
     }

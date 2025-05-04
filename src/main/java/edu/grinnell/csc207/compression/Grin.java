@@ -1,12 +1,17 @@
 package edu.grinnell.csc207.compression;
 
-import java.io.IOException;
+
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import java.io.IOException;
+
 
 /**
  * The driver for the Grin compression program.
  */
+
 public class Grin {
     private static final int MAGIC_NUMBER = 0xFACEB00C;
 
@@ -15,24 +20,36 @@ public class Grin {
      * .grin file denoted by outfile.
      * 
      * @param infile the file to
-     * @throws IOException decode
      * @param outfile the file to ouptut to
+     * @throws IOException
      */
-    public static void decode(String infile, String outfile) throws IOException {
-        BitInputStream in = new BitInputStream(infile);
-        BitOutputStream out = new BitOutputStream(outfile);
+public static void decode(String infile, String outfile) throws IOException {
+    
+    BitInputStream in = new BitInputStream(infile);
+    BitOutputStream out = new BitOutputStream(outfile);
 
-        int magicNumber = in.readBits(32);
-        if (magicNumber != MAGIC_NUMBER) {
-            in.close();
-            out.close();
-            throw new IllegalArgumentException("Invalid .grin file: incorrect magic number");
-        }
-        HuffmanTree tree = new HuffmanTree(in);
-        tree.decode(in, out);
+    int magicNumber = in.readBits(32);
+    if (magicNumber != MAGIC_NUMBER) {
         in.close();
         out.close();
+        throw new IllegalArgumentException("Invalid .grin file: incorrect magic number");
     }
+
+    Map<Short, Integer> frequencies = new HashMap<>();
+    while (in.hasBits()) {
+        int value = in.readBits(8);
+        if (value == -1) {
+            break;
+        }
+        frequencies.put((short) value, frequencies.getOrDefault((short) value, 0) + 1);
+    }
+
+    // Deserialize the Huffman tree directly from the input stream
+    HuffmanTree tree = new HuffmanTree(frequencies);
+    tree.decode(in, out);
+    in.close();
+    out.close();
+}
 
     /**
      * Creates a mapping from 8-bit sequences to number-of-occurrences of
@@ -44,7 +61,7 @@ public class Grin {
      * @throws IOException
      */
     public static Map<Short, Integer> createFrequencyMap(String file) throws IOException {
-        Map<Short, Integer> freqMap = new HashMap<>();
+        Map<Short, Integer> freqMap = new TreeMap<>();
         BitInputStream in = new BitInputStream(file);
         int value;
         while ((value = in.readBits(8)) != -1) {
